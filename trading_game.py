@@ -4,12 +4,8 @@ import random
 import uuid
 
 # TASKS
-    # Share to socials 
-    # Trade function
     # Change photo button doesn't work when the card has already been created
-    # Delete button
-
-
+    # Some buttons like trade and delete, need to be clicked twice to work. 
 
 # Function to generate a random card image for illustration purposes
 def generate_card_image():
@@ -27,6 +23,10 @@ if 'traits' not in st.session_state:
     st.session_state.traits = ""
 if 'image' not in st.session_state:
     st.session_state.image = None
+if 'trade_in_progress' not in st.session_state:
+    st.session_state.trade_in_progress = False
+if 'selected_card_for_trade' not in st.session_state:
+    st.session_state.selected_card_for_trade = None
 
 # App Title
 st.title("Fantasy Trading Cards")
@@ -84,48 +84,41 @@ if st.session_state.player_name and st.session_state.player_name in st.session_s
                 st.image(generate_card_image(), caption="Generated Image", use_column_width=True)
             st.text(f"Traits: {', '.join(card['traits'])}")
             
-            # Add an Edit button for each card
-            if st.button(f"Edit '{card['character_name']}'", key=f"edit_{i}"):
-                # Allow the user to edit the card's details
-                new_character_name = st.text_input("Edit Character Name", value=card['character_name'], key=f"name_{i}")
-                new_traits = st.text_area("Edit Traits (comma separated)", value=", ".join(card['traits']), key=f"traits_{i}")
-                new_image = st.file_uploader("Upload New Image (Optional)", key=f"image_{i}")
-                
-                if st.button(f"Save Changes for '{card['character_name']}'", key=f"save_{i}"):
-                    # Update the card with the new values
-                    card['character_name'] = new_character_name
-                    card['traits'] = [trait.strip() for trait in new_traits.split(',')]
-                    if new_image:
-                        card['image'] = new_image
-                    st.success(f"Card '{new_character_name}' updated!")
+            # Add a Delete button for each card
+            if st.button(f"Delete '{card['character_name']}'", key=f"delete_{i}"):
+                # Remove the card from session state
+                st.session_state.cards[st.session_state.player_name].remove(card)
+                st.success(f"Card '{card['character_name']}' deleted!")
 
-# Section to Trade Cards
-st.sidebar.header("Trade Cards")
+            # Add Trade button for each card
+            if st.button(f"Trade '{card['character_name']}'", key=f"trade_{i}"):
+                # Mark trade as in progress and store selected card for trade
+                st.session_state.trade_in_progress = True
+                st.session_state.selected_card_for_trade = card
 
-trader_name = st.sidebar.text_input("Trade with (Player Name)")
-if trader_name and st.sidebar.button("Initiate Trade"):
-    if trader_name in st.session_state.cards and st.session_state.player_name in st.session_state.cards:
-        st.write(f"Trading between {st.session_state.player_name} and {trader_name}")
+# Trade Confirmation Section
+if st.session_state.trade_in_progress and st.session_state.selected_card_for_trade:
+    card_to_trade = st.session_state.selected_card_for_trade
 
-        # Display Player's Cards to Choose from for Trading
-        st.write(f"{st.session_state.player_name}'s Cards")
-        selected_card_player = st.selectbox(f"Select {st.session_state.player_name}'s card to trade", [card['character_name'] for card in st.session_state.cards[st.session_state.player_name]])
+    st.header(f"Trading '{card_to_trade['character_name']}'")
+    
+    trader_name = st.selectbox("Choose a player to trade with", [p for p in st.session_state.cards.keys() if p != st.session_state.player_name])
 
-        # Display Trader's Cards to Choose from for Trading
-        st.write(f"{trader_name}'s Cards")
-        selected_card_trader = st.selectbox(f"Select {trader_name}'s card to trade", [card['character_name'] for card in st.session_state.cards[trader_name]])
+    if trader_name:
+        trader_card_options = [(tc['character_name'], idx) for idx, tc in enumerate(st.session_state.cards[trader_name])]
+        selected_trader_card = st.selectbox(f"Select a card from {trader_name}", trader_card_options, format_func=lambda x: x[0])
 
         if st.button("Confirm Trade"):
-            # Perform the trade (swap cards between players)
-            player_card = next(card for card in st.session_state.cards[st.session_state.player_name] if card['character_name'] == selected_card_player)
-            trader_card = next(card for card in st.session_state.cards[trader_name] if card['character_name'] == selected_card_trader)
-            
-            # Swap the cards
-            st.session_state.cards[st.session_state.player_name].remove(player_card)
+            # Get the selected trader's card
+            trader_card = st.session_state.cards[trader_name][selected_trader_card[1]]
+
+            # Perform the trade (swap cards)
+            st.session_state.cards[st.session_state.player_name].remove(card_to_trade)
             st.session_state.cards[trader_name].remove(trader_card)
             st.session_state.cards[st.session_state.player_name].append(trader_card)
-            st.session_state.cards[trader_name].append(player_card)
-            
-            st.success(f"Trade completed: {st.session_state.player_name} traded '{selected_card_player}' for '{selected_card_trader}' with {trader_name}.")
-    else:
-        st.sidebar.error("Both players must have cards to trade.")
+            st.session_state.cards[trader_name].append(card_to_trade)
+
+            st.session_state.trade_in_progress = False
+            st.session_state.selected_card_for_trade = None
+
+            st.success(f"Trade completed! You traded '{card_to_trade['character_name']}' for '{trader_card['character_name']}' with {trader_name}.")
