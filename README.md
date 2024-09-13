@@ -33,6 +33,9 @@ This project is a **Fantasy Trading Cards** app built using [Streamlit](https://
 
 <p align="center">
   <img src="batmansupermancards.jpg" alt="Player1's Cards and View" width="400"/>
+</p>
+
+<p align="center">
   <img src="othercards.jpg" alt="Player2's Cards and View" width="400"/>
 </p>
 
@@ -41,6 +44,7 @@ This project is a **Fantasy Trading Cards** app built using [Streamlit](https://
 <p align="center">
   <img src="Trade_process.png" alt="Trading Cards" width="400"/>
 </p>
+
 
 
 ## Known Issue
