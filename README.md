@@ -4,6 +4,8 @@
 
 This project is a **Fantasy Trading Cards** app built using [Streamlit](https://streamlit.io/). Users can create, edit, trade, and delete fantasy character cards with unique images and traits. 
 
+I took on this project as a commissioned bounty
+
 ## Features
 - Create cards with a player name, character name, traits and an image.
 - Edit the character name, traits or image of existing cards.
