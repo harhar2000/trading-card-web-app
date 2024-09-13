@@ -3,9 +3,8 @@ from PIL import Image
 import random
 import uuid
 
-# TASKS
-    # Change photo button doesn't work when the card has already been created
-    # Some buttons like trade and delete, need to be clicked twice to work. 
+# Note
+    # Some buttons like trade, delete and save changes, need to be clicked twice to work. 
 
 # Function to generate a random card image for illustration purposes
 def generate_card_image():
@@ -27,6 +26,8 @@ if 'trade_in_progress' not in st.session_state:
     st.session_state.trade_in_progress = False
 if 'selected_card_for_trade' not in st.session_state:
     st.session_state.selected_card_for_trade = None
+if 'edit_mode' not in st.session_state:
+    st.session_state.edit_mode = {}  # Track which card is being edited
 
 # App Title
 st.title("Fantasy Trading Cards")
@@ -77,24 +78,47 @@ if st.session_state.player_name and st.session_state.player_name in st.session_s
     for i, card in enumerate(cards):
         # Assign each card to a column in the grid
         with cols[i % cols_per_row]:
-            st.subheader(card['character_name'])
-            if card['image']:
-                st.image(card['image'], caption="Card Image", use_column_width=True)
+            if st.session_state.edit_mode.get(i, False):
+                # Editing mode for the card
+                new_character_name = st.text_input("Character Name", value=card['character_name'], key=f"edit_name_{i}")
+                new_traits = st.text_area("Traits (comma separated)", value=', '.join(card['traits']), key=f"edit_traits_{i}")
+                new_image = st.file_uploader("Upload Image", key=f"edit_image_{i}")
+                
+                if st.button("Save Changes", key=f"save_{i}"):
+                    # Update the card with the new details
+                    card['character_name'] = new_character_name
+                    card['traits'] = new_traits.split(',')
+                    if new_image:
+                        card['image'] = new_image
+                    st.session_state.edit_mode[i] = False
+                    st.success(f"Card '{new_character_name}' updated!")
+                
+                if st.button("Cancel", key=f"cancel_{i}"):
+                    st.session_state.edit_mode[i] = False
             else:
-                st.image(generate_card_image(), caption="Generated Image", use_column_width=True)
-            st.text(f"Traits: {', '.join(card['traits'])}")
-            
-            # Add a Delete button for each card
-            if st.button(f"Delete '{card['character_name']}'", key=f"delete_{i}"):
-                # Remove the card from session state
-                st.session_state.cards[st.session_state.player_name].remove(card)
-                st.success(f"Card '{card['character_name']}' deleted!")
+                # Display mode for the card
+                st.subheader(card['character_name'])
+                if card['image']:
+                    st.image(card['image'], caption="Card Image", use_column_width=True)
+                else:
+                    st.image(generate_card_image(), caption="Generated Image", use_column_width=True)
+                st.text(f"Traits: {', '.join(card['traits'])}")
 
-            # Add Trade button for each card
-            if st.button(f"Trade '{card['character_name']}'", key=f"trade_{i}"):
-                # Mark trade as in progress and store selected card for trade
-                st.session_state.trade_in_progress = True
-                st.session_state.selected_card_for_trade = card
+                # Add Edit button for each card
+                if st.button(f"Edit '{card['character_name']}'", key=f"edit_{i}"):
+                    st.session_state.edit_mode[i] = True
+                
+                # Add a Delete button for each card
+                if st.button(f"Delete '{card['character_name']}'", key=f"delete_{i}"):
+                    # Remove the card from session state
+                    st.session_state.cards[st.session_state.player_name].remove(card)
+                    st.success(f"Card '{card['character_name']}' deleted!")
+                
+                # Add Trade button for each card
+                if st.button(f"Trade '{card['character_name']}'", key=f"trade_{i}"):
+                    # Mark trade as in progress and store selected card for trade
+                    st.session_state.trade_in_progress = True
+                    st.session_state.selected_card_for_trade = card
 
 # Trade Confirmation Section
 if st.session_state.trade_in_progress and st.session_state.selected_card_for_trade:
