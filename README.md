@@ -53,7 +53,7 @@ This project is a **Fantasy Trading Cards** app built using [Streamlit](https://
 - **uuid** - Generate unique identifiers for cards
 - **random** - Generate random values for card images
 
-### To install dependencies:
+To install dependencies:
     ```bash
-        pip install streamlit pillow
+    pip install streamlit pillow
     ```
